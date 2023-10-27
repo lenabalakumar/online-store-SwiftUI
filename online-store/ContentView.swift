@@ -8,19 +8,18 @@
 import SwiftUI
 
 struct ContentView: View {
+    @ObservedObject var productManager: ProductManager
+    
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundColor(.accentColor)
-            Text("Hello, world!")
-        }
-        .padding()
+        ProductListView(productManager: productManager)
+//        TodoListView()
     }
 }
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
-        ContentView()
+        ContentView(productManager: ProductManager())
+//            .environmentObject(CartManager())
+//            .environmentObject(TodoManager())
     }
 }

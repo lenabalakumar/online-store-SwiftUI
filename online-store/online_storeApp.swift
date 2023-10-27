@@ -9,9 +9,15 @@ import SwiftUI
 
 @main
 struct online_storeApp: App {
+    
+    @StateObject var productManager = ProductManager()
+//    @StateObject var todoManager = TodoManager()
+    
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ContentView(productManager: productManager)
+//                .environmentObject(cartManager)
+//                .environmentObject(todoManager)
         }
     }
 }
