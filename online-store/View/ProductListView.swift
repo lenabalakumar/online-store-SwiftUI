@@ -44,6 +44,7 @@ struct ProductListView: View {
                                 Text(product.quantity, format: .number)
                                     .font(.callout)
                                     .padding(.horizontal, 4)
+                                    .animation(.easeOut, value: product.quantity)
                                 
                                 Button {
                                     productManager.addItemToCart(product: product)

@@ -6,18 +6,83 @@
 //
 
 import Foundation
+import StripePaymentSheet
 
 class ProductManager: ObservableObject {
+    
+    let backendUrl: URL = URL(string: "http://localhost:7722/payment-sheet")!
+    
+    @Published var paymentSheet: PaymentSheet?
+    @Published var paymentResult: PaymentSheetResult?
+    
     @Published var products: [Product] = []
     @Published var cart: [Product] = []
     @Published var errorMessage: String? = nil
     @Published var total: Float = 0.0
     @Published var numberOfItemsInCart: Int = 0
+    private(set) var isPaymentComplete: Bool = false {
+        didSet {
+            cart = []
+        }
+    }
+    
     let url = URL(string: "https://fakestoreapi.com/products")!
     let apiService = APIService()
     
     init() {
         fetchProducts()
+    }
+    
+    func preparePaymentSheet() {
+        var request = URLRequest(url: backendUrl)
+        request.httpMethod = "POST"
+        
+        let task = URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+            if let error = error {
+                print("Error \(error)")
+            }
+            
+            if let response = response as? HTTPURLResponse, !(200...299).contains(response.statusCode) {
+                print("Error \(response)")
+            }
+            
+            guard let data = data,
+                        let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String : Any],
+                        let customerId = json["customer"] as? String,
+                        let customerEphemeralKeySecret = json["ephemeralKey"] as? String,
+                        let paymentIntentClientSecret = json["paymentIntent"] as? String,
+                        let publishableKey = json["publishableKey"] as? String,
+                        let self = self else {
+                    // Handle error
+                    return
+                  }
+            
+            STPAPIClient.shared.publishableKey = publishableKey
+            var configuration = PaymentSheet.Configuration()
+            configuration.merchantDisplayName = "Soda Inc"
+            configuration.customer = .init(id: customerId, ephemeralKeySecret: customerEphemeralKeySecret)
+            configuration.allowsDelayedPaymentMethods = true
+            
+            DispatchQueue.main.async {
+                self.paymentSheet = PaymentSheet(paymentIntentClientSecret: paymentIntentClientSecret, configuration: configuration)
+            }
+        }
+        
+        task.resume()
+    }
+    
+    func onPaymentCompletion(result: PaymentSheetResult) {
+        switch result {
+        case .completed:
+            self.isPaymentComplete = true
+            clearCart()
+        case .canceled:
+            print("Payment is cancelled!")
+        case .failed(error: let error):
+            print("Error in processing payment: \(error)")
+        }
+        
+      self.paymentResult = result
     }
     
     func fetchProducts() {
@@ -68,6 +133,13 @@ class ProductManager: ObservableObject {
                 calculateTotal()
             }
         }
+    }
+    
+    func clearCart() -> Void {
+        products.indices.filter { products[$0].productInCart == .inCart }
+            .forEach { products[$0].productInCart = .notInCart }
+        calculateTotal()
+        calculateNumberOfItemsInCart()
     }
     
     func calculateNumberOfItemsInCart() -> Void {

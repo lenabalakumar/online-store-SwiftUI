@@ -10,7 +10,6 @@ import SwiftUI
 struct ProductView: View {
     
     let product: Product
-    @EnvironmentObject var cartManager: CartManager
     
     var body: some View {
         ScrollView {
@@ -45,7 +44,6 @@ struct ProductView: View {
                     .padding(8)
                     .background(Color.white)
                     .clipShape(RoundedRectangle(cornerRadius: 20))
-
                     .padding()
 
 
@@ -68,7 +66,7 @@ struct ProductView: View {
                 Spacer()
                 
                 Button {
-                    cartManager.addProduct(productToAdd: CartProduct(product: product, quantity: 1))
+                  
                 } label: {
                     Text("Add to cart")
                 }

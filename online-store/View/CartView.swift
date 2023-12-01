@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import StripePaymentSheet
 
 struct CartView: View {
     @ObservedObject var productManager: ProductManager
@@ -15,25 +16,38 @@ struct CartView: View {
             ZStack(alignment: .bottom) {
                 List {
                     ForEach(productManager.products.filter({ $0.productInCart == .inCart })) { product in
-                        Text(product.title)
+                        VStack(alignment: .leading) {
+                            Text(product.title)
+                                .font(.callout)
+                            Text("Quantity: \(product.quantity)")
+                                .font(.caption)
+                        }
                     }
                 }
                 .listStyle(.plain)
                 .navigationTitle("Cart")
                 
-    //            GeometryReader { geometry in
-    //            if productManager.total > 0 {
-                    Text(productManager.total, format: .number)
-                        .frame(maxWidth: .infinity, maxHeight: 50)
-                        .background(Color.accentColor)
-                        .foregroundColor(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 4))
-                        .padding()
-                    //                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment:.bottom)
-                    //            Text("Hello world!")
-    //            }
+                
+                if let paymentSheet = productManager.paymentSheet {
+                    PaymentSheet.PaymentButton(
+                      paymentSheet: paymentSheet,
+                      onCompletion: productManager.onPaymentCompletion
+                    ) {
+                        Text("$ \(String(format: "%.2f", productManager.total))")
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: 50)
+                    .background(Color.accentColor)
+                    .foregroundColor(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                    .padding()
+                  } else {
+                    Text("Loading…")
+                  }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .onAppear {
+                productManager.preparePaymentSheet()
+            }
         } else {
             Text("No items in cart!")
         }

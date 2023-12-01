@@ -13,6 +13,10 @@ struct online_storeApp: App {
     @StateObject var productManager = ProductManager()
 //    @StateObject var todoManager = TodoManager()
     
+    init() {
+        
+    }
+    
     var body: some Scene {
         WindowGroup {
             ContentView(productManager: productManager)
